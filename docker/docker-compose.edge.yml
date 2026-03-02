@@ -1,0 +1,214 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════
+#  GeoCloud Fleet Edge Broker Stack  v2.1.0
+#  docker-compose.edge.yml
+#
+#  Services:
+#    ros2_core        – ROS2 Humble; subscribes to fleet topics via DDS
+#    video_broker_*   – Custom ROS2+FFmpeg image; proper rclpy video relay
+#    rtsp_server      – MediaMTX RTSP/WebRTC server
+#    zenoh_bridge     – Zenoh-DDS bridge; routes topics to cloud
+#    latency_exporter – Prometheus metrics exporter for latency/health
+#    prometheus       – Prometheus scraper (NEW v2.1.0)
+#    grafana          – Dashboard for latency, QoS, and fleet health
+#
+#  Fixes (v2.1.0):
+#    - video_broker: replaced linuxserver/ffmpeg (no ROS2) with custom
+#      Dockerfile.video_broker (ROS2 Humble + FFmpeg)
+#    - video_broker: now calls ros2_to_rtsp_node.py (proper rclpy relay)
+#      instead of ros2_to_rtsp.sh (heredoc bug + YAML text parsing)
+#    - ros2_core: removed blocking "ros2 topic echo --once" startup deadlock
+#    - prometheus: added (was missing; Grafana had no datasource)
+#
+#  Deploy locally:  docker compose -f docker-compose.edge.yml up
+#  Deploy on edge:  copy to Jetson Nano / RPi 4 + same command
+#  Build first:     docker compose -f docker-compose.edge.yml build
+# ═══════════════════════════════════════════════════════════════════════
+
+x-ros-env: &ros-env
+  ROS_DOMAIN_ID:        "42"
+  RMW_IMPLEMENTATION:   "rmw_fastrtps_cpp"
+  FASTRTPS_DEFAULT_PROFILES_FILE: "/config/fastdds_profile.xml"
+  ROS_LOCALHOST_ONLY:   "0"
+
+services:
+
+  # ─── ROS2 Core Listener ──────────────────────────────────────────────
+  # Note: video_broker_* containers subscribe to robot topics directly via
+  # rclpy (network_mode: host), so no relay is needed here. This service
+  # acts as a DDS participant keepalive and health endpoint.
+  ros2_core:
+    image: ros:jazzy-ros-base
+    container_name: edge_ros2_core
+    network_mode: host
+    environment:
+      <<: *ros-env
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        echo '[ros2_core] DDS participant ready on domain 42' &&
+        sleep infinity
+      "
+    restart: unless-stopped
+
+  # ─── Video Broker (ROS2 + FFmpeg) ────────────────────────────────────
+  # FIX (v2.1.0): replaced linuxserver/ffmpeg (no ROS2 — caused crash-loop)
+  # with custom image built from Dockerfile.video_broker (ROS2 + FFmpeg).
+  # FIX (v2.1.0): calls ros2_to_rtsp_node.py (proper rclpy binary relay)
+  # instead of ros2_to_rtsp.sh (heredoc variable expansion bug).
+  video_broker_tb3_1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.video_broker
+    image: geoccloud/video_broker:latest
+    container_name: edge_video_tb3_1
+    network_mode: host
+    environment:
+      <<: *ros-env
+    volumes:
+      - ../scripts:/scripts:ro
+      - ../config:/config:ro
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        python3 /scripts/ros2_to_rtsp_node.py tb3_1 rtsp://localhost:8554/tb3_1
+      "
+    depends_on: [ros2_core, rtsp_server]
+    restart: unless-stopped
+
+  video_broker_tb3_2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.video_broker
+    image: geoccloud/video_broker:latest
+    container_name: edge_video_tb3_2
+    network_mode: host
+    environment:
+      <<: *ros-env
+    volumes:
+      - ../scripts:/scripts:ro
+      - ../config:/config:ro
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        python3 /scripts/ros2_to_rtsp_node.py tb3_2 rtsp://localhost:8554/tb3_2
+      "
+    depends_on: [ros2_core, rtsp_server]
+    restart: unless-stopped
+
+  video_broker_drone_1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.video_broker
+    image: geoccloud/video_broker:latest
+    container_name: edge_video_drone_1
+    network_mode: host
+    environment:
+      <<: *ros-env
+    volumes:
+      - ../scripts:/scripts:ro
+      - ../config:/config:ro
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        python3 /scripts/ros2_to_rtsp_node.py drone_1 rtsp://localhost:8554/drone_1
+      "
+    depends_on: [ros2_core, rtsp_server]
+    restart: unless-stopped
+
+  video_broker_drone_2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.video_broker
+    image: geoccloud/video_broker:latest
+    container_name: edge_video_drone_2
+    network_mode: host
+    environment:
+      <<: *ros-env
+    volumes:
+      - ../scripts:/scripts:ro
+      - ../config:/config:ro
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        python3 /scripts/ros2_to_rtsp_node.py drone_2 rtsp://localhost:8554/drone_2
+      "
+    depends_on: [ros2_core, rtsp_server]
+    restart: unless-stopped
+
+  # ─── MediaMTX RTSP / WebRTC Server ───────────────────────────────────
+  rtsp_server:
+    image: bluenviron/mediamtx:latest
+    container_name: edge_mediamtx
+    ports:
+      - "8554:8554"      # RTSP
+      - "8888:8888"      # HLS (fallback)
+      - "8889:8889"      # WebRTC (primary for console)
+      - "8890:8890/udp"  # WebRTC SRTP
+    volumes:
+      - ../config/mediamtx.yml:/mediamtx.yml:ro
+    restart: unless-stopped
+
+  # ─── Zenoh DDS Bridge ────────────────────────────────────────────────
+  zenoh_bridge:
+    image: eclipse/zenoh-bridge-ros2dds:latest
+    container_name: edge_zenoh_bridge
+    network_mode: host
+    environment:
+      ROS_DISTRO: jazzy
+    volumes:
+      - ../config/zenoh_bridge.json5:/etc/zenoh/bridge.json5:ro
+    command: ["--config", "/etc/zenoh/bridge.json5"]
+    restart: unless-stopped
+
+  # ─── Prometheus Metrics Scraper ──────────────────────────────────────
+  # NEW (v2.1.0): Prometheus was missing — Grafana had no datasource.
+  # Scrapes latency_exporter on :9091 every 5s; Grafana reads from :9090.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: edge_prometheus
+    network_mode: host
+    volumes:
+      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    restart: unless-stopped
+
+  # ─── Prometheus Metrics Exporter ─────────────────────────────────────
+  latency_exporter:
+    image: geoccloud/video_broker:latest   # has ROS2 + prometheus-client pre-installed
+    container_name: edge_latency_exporter
+    network_mode: host
+    ports:
+      - "9091:9091"
+    environment:
+      <<: *ros-env
+    volumes:
+      - ../scripts:/scripts:ro
+    command: >
+      bash -c "
+        source /opt/ros/jazzy/setup.bash &&
+        python3 /scripts/latency_exporter.py
+      "
+    depends_on: [ros2_core]
+    restart: unless-stopped
+
+  # ─── Grafana Dashboard ───────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: edge_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "fleet_admin"
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+volumes:
+  ros2_tmp:
+  grafana_data:

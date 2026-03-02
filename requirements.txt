@@ -1,0 +1,17 @@
+# GeoCloud Fleet Simulation — Python dependencies
+# Install into the project venv (NOT system Python):
+#
+#   python3 -m venv --system-site-packages .venv
+#   .venv/bin/pip install -r requirements.txt
+#
+# IMPORTANT: --system-site-packages is required so the venv can see
+# ROS2's Python packages (rclpy, sensor_msgs, yaml, etc.) which are
+# installed by apt under /opt/ros/jazzy/lib/python*/site-packages.
+# The venv still isolates OUR project packages from the system pip.
+
+prometheus-client>=0.20.0
+scipy>=1.12.0
+
+# Operator console (videg_console_server.py)
+websockets>=12.0
+opencv-python-headless>=4.9.0    # provides cv2; skip if python3-opencv is installed system-wide

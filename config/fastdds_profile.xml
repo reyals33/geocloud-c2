@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  fastdds_profile.xml
+  ─────────────────────────────────────────────────────────────────────
+  FastDDS profiles tuned for multi-robot fleet + edge broker comms.
+
+  Key settings:
+    - Separate domains for fleet (42) and edge (43) to avoid cross-talk
+    - BEST_EFFORT QoS for video (drop old frames; never block)
+    - RELIABLE QoS for commands (guaranteed delivery)
+    - Reduced heartbeat/NACKSUPP periods for low-latency on LAN
+    - Multicast discovery within LAN; unicast fallback for WAN
+
+  Set env: FASTRTPS_DEFAULT_PROFILES_FILE=/path/to/fastdds_profile.xml
+-->
+<dds>
+  <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+
+    <!-- ── Default participant (fleet ROS2 nodes) ─────────────── -->
+    <participant profile_name="default_participant" is_default_profile="true">
+      <rtps>
+        <builtin>
+          <!-- Multicast discovery: all fleet nodes on same subnet discover automatically -->
+          <metatrafficMulticastLocatorList>
+            <locator>
+              <udpv4>
+                <address>239.255.0.1</address>
+                <port>7400</port>
+              </udpv4>
+            </locator>
+          </metatrafficMulticastLocatorList>
+
+          <!-- Unicast fallback (for edge broker on different subnet) -->
+          <defaultUnicastLocatorList>
+            <locator>
+              <udpv4>
+                <port>0</port>   <!-- OS-assigned -->
+              </udpv4>
+            </locator>
+          </defaultUnicastLocatorList>
+        </builtin>
+
+        <!-- Reduce discovery traffic for fleet size -->
+        <participantAnnounceCountMin>3</participantAnnounceCountMin>
+      </rtps>
+    </participant>
+
+    <!-- ── Video topics: BEST_EFFORT (sensor data profile) ────── -->
+    <!-- Subscribers drop missed frames; publishers never block.    -->
+    <!-- Use for: /*/camera/compressed, /*/camera/image_raw         -->
+    <data_writer profile_name="video_writer_profile">
+      <qos>
+        <reliability>
+          <kind>BEST_EFFORT</kind>
+        </reliability>
+        <durability>
+          <kind>VOLATILE</kind>
+        </durability>
+        <liveliness>
+          <kind>AUTOMATIC</kind>
+          <lease_duration>
+            <sec>1</sec>
+            <nanosec>0</nanosec>
+          </lease_duration>
+        </liveliness>
+        <publishMode>
+          <kind>ASYNCHRONOUS</kind>    <!-- Non-blocking publish for video -->
+        </publishMode>
+      </qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </data_writer>
+
+    <data_reader profile_name="video_reader_profile">
+      <qos>
+        <reliability>
+          <kind>BEST_EFFORT</kind>
+        </reliability>
+        <durability>
+          <kind>VOLATILE</kind>
+        </durability>
+        <history>
+          <kind>KEEP_LAST</kind>
+          <depth>1</depth>              <!-- Always process freshest frame only -->
+        </history>
+      </qos>
+    </data_reader>
+
+    <!-- ── Command topics: RELIABLE (control profile) ─────────── -->
+    <!-- Used for: /*/cmd_vel, /mavros/setpoint_*, /px4/*/in/*     -->
+    <data_writer profile_name="cmd_writer_profile">
+      <qos>
+        <reliability>
+          <kind>RELIABLE</kind>
+        </reliability>
+        <durability>
+          <kind>TRANSIENT_LOCAL</kind> <!-- Late joiners receive last command -->
+        </durability>
+        <!-- Tuned heartbeat for fast ACK on LAN -->
+        <heartbeatPeriod>
+          <sec>0</sec>
+          <nanosec>100000000</nanosec>  <!-- 100 ms -->
+        </heartbeatPeriod>
+        <nackResponseDelay>
+          <sec>0</sec>
+          <nanosec>5000000</nanosec>    <!-- 5 ms NACK response -->
+        </nackResponseDelay>
+      </qos>
+    </data_writer>
+
+    <data_reader profile_name="cmd_reader_profile">
+      <qos>
+        <reliability>
+          <kind>RELIABLE</kind>
+        </reliability>
+        <durability>
+          <kind>TRANSIENT_LOCAL</kind>
+        </durability>
+        <history>
+          <kind>KEEP_LAST</kind>
+          <depth>10</depth>
+        </history>
+      </qos>
+    </data_reader>
+
+    <!-- ── Topic-scoped QoS bindings (FastDDS profile-name matching) ─ -->
+    <!--
+      FastDDS applies DataWriter/DataReader profiles when the profile_name
+      exactly matches the DDS topic name. ROS2 prefixes all topic names
+      with "rt/" (e.g. ROS2 "/tb3_1/camera/compressed" → DDS "rt/tb3_1/camera/compressed").
+      The entries below bind the tuned QoS profiles to each fleet topic
+      without requiring any application-level code changes.
+
+      Env required:
+        export FASTRTPS_DEFAULT_PROFILES_FILE=/path/to/fastdds_profile.xml
+        export RMW_FASTRTPS_USE_QOS_FROM_ENV=0   ← let XML govern QoS
+    -->
+
+    <!-- Camera compressed topics → BEST_EFFORT, VOLATILE, KEEP_LAST=1 -->
+    <data_writer profile_name="rt/tb3_1/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <publishMode><kind>ASYNCHRONOUS</kind></publishMode></qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </data_writer>
+    <data_reader profile_name="rt/tb3_1/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <history><kind>KEEP_LAST</kind><depth>1</depth></history></qos>
+    </data_reader>
+
+    <data_writer profile_name="rt/tb3_2/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <publishMode><kind>ASYNCHRONOUS</kind></publishMode></qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </data_writer>
+    <data_reader profile_name="rt/tb3_2/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <history><kind>KEEP_LAST</kind><depth>1</depth></history></qos>
+    </data_reader>
+
+    <data_writer profile_name="rt/drone_1/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <publishMode><kind>ASYNCHRONOUS</kind></publishMode></qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </data_writer>
+    <data_reader profile_name="rt/drone_1/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <history><kind>KEEP_LAST</kind><depth>1</depth></history></qos>
+    </data_reader>
+
+    <data_writer profile_name="rt/drone_2/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <publishMode><kind>ASYNCHRONOUS</kind></publishMode></qos>
+      <historyMemoryPolicy>PREALLOCATED_WITH_REALLOC</historyMemoryPolicy>
+    </data_writer>
+    <data_reader profile_name="rt/drone_2/camera/compressed">
+      <qos><reliability><kind>BEST_EFFORT</kind></reliability>
+           <durability><kind>VOLATILE</kind></durability>
+           <history><kind>KEEP_LAST</kind><depth>1</depth></history></qos>
+    </data_reader>
+
+    <!-- Command topics → RELIABLE, TRANSIENT_LOCAL, KEEP_LAST=10 -->
+    <data_writer profile_name="rt/tb3_1/cmd_vel">
+      <qos><reliability><kind>RELIABLE</kind></reliability>
+           <durability><kind>TRANSIENT_LOCAL</kind></durability></qos>
+    </data_writer>
+    <data_reader profile_name="rt/tb3_1/cmd_vel">
+      <qos><reliability><kind>RELIABLE</kind></reliability>
+           <durability><kind>TRANSIENT_LOCAL</kind></durability>
+           <history><kind>KEEP_LAST</kind><depth>10</depth></history></qos>
+    </data_reader>
+
+    <data_writer profile_name="rt/tb3_2/cmd_vel">
+      <qos><reliability><kind>RELIABLE</kind></reliability>
+           <durability><kind>TRANSIENT_LOCAL</kind></durability></qos>
+    </data_writer>
+    <data_reader profile_name="rt/tb3_2/cmd_vel">
+      <qos><reliability><kind>RELIABLE</kind></reliability>
+           <durability><kind>TRANSIENT_LOCAL</kind></durability>
+           <history><kind>KEEP_LAST</kind><depth>10</depth></history></qos>
+    </data_reader>
+
+    <data_writer profile_name="rt/drone_1/mavros/setpoint_position/local">
+      <qos><reliability><kind>RELIABLE</kind></reliability>
+           <durability><kind>TRANSIENT_LOCAL</kind></durability></qos>
+    </data_writer>
+    <data_writer profile_name="rt/drone_2/mavros/setpoint_position/local">
+      <qos><reliability><kind>RELIABLE</kind></reliability>
+           <durability><kind>TRANSIENT_LOCAL</kind></durability></qos>
+    </data_writer>
+
+  </profiles>
+</dds>

@@ -1,0 +1,47 @@
+###############################################################
+# prometheus.yml
+# Prometheus scrape configuration for GeoCloud Fleet Simulation
+# Scrapes the latency_exporter sidecar running in the edge stack
+###############################################################
+
+global:
+  scrape_interval:     5s      # Scrape every 5 s for near-real-time dashboards
+  evaluation_interval: 5s
+  scrape_timeout:      4s
+
+# ── Alerting (optional; wire to Alertmanager for pager duty) ──
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ["alertmanager:9093"]
+
+# ── Rule files ────────────────────────────────────────────────
+# rule_files:
+#   - "alerts/*.yml"
+
+# ── Scrape configs ─────────────────────────────────────────────
+scrape_configs:
+
+  # Self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # GeoCloud Fleet latency exporter (Python prometheus_client)
+  # Exposes: ros2_topic_latency_seconds{robot, topic}
+  #          ros2_topic_high_latency_total{robot, topic}
+  - job_name: "latency_exporter"
+    static_configs:
+      - targets: ["latency_exporter:9091"]
+    metrics_path: "/metrics"
+    scheme: http
+
+  # MediaMTX metrics (if enabled; set metrics: yes in mediamtx.yml)
+  # - job_name: "mediamtx"
+  #   static_configs:
+  #     - targets: ["mediamtx:9998"]
+
+  # Node exporter (host hardware metrics; add container if desired)
+  # - job_name: "node_exporter"
+  #   static_configs:
+  #     - targets: ["node_exporter:9100"]

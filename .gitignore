@@ -1,0 +1,9 @@
+.venv/
+c2-dashboard/node_modules/
+c2-dashboard/dist/
+install/
+launch/lambda.zip
+*.pyc
+__pycache__/
+ViDeG.pem
+*.pem

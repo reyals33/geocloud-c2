@@ -1,0 +1,73 @@
+/// zenoh_bridge.json5
+/// ─────────────────────────────────────────────────────────────────────
+/// Zenoh DDS Bridge configuration for GeoCloud Fleet Edge Broker
+///
+/// Routes selected ROS2 DDS topics from fleet LAN → Zenoh router → cloud.
+/// Video streams are NOT routed via Zenoh (too heavy); use RTSP/WebRTC.
+/// Zenoh carries: commands, odometry, SLAM poses, latency metrics.
+///
+/// To connect cloud console:
+///   Set ZENOH_ROUTER_URL to your cloud VM IP.
+///   Cloud node runs: zenoh-bridge-ros2dds --config cloud_bridge.json5
+/// ─────────────────────────────────────────────────────────────────────
+{
+  /// Zenoh router endpoint (edge → cloud direction)
+  /// Replace with your cloud server IP for production.
+  connect: {
+    endpoints: [
+      /// "tcp/<CLOUD_VM_IP>:7447"   ← uncomment and fill in for cloud
+    ],
+  },
+
+  /// Listen for local ROS2 nodes
+  listen: {
+    endpoints: ["tcp/0.0.0.0:7447"],
+  },
+
+  /// DDS ↔ Zenoh bridge configuration
+  plugins: {
+    ros2dds: {
+
+      /// ROS domain to bridge (must match fleet ROS_DOMAIN_ID)
+      domain: 42,
+
+      /// Topics to forward FROM fleet → cloud (allow-list; everything else dropped)
+      /// Pattern: ROS2 topic name, supporting wildcards.
+      allow: {
+        subscribers: [
+          /// Odometry from all fleet members
+          "/tb3_1/odom",
+          "/tb3_2/odom",
+          "/drone_1/mavros/local_position/odom",
+          "/drone_2/mavros/local_position/odom",
+
+          /// SLAM/VINS odometry outputs
+          "/drone_1/vins/odometry",
+          "/drone_2/vins/odometry",
+
+          /// Fleet health
+          "/drone_1/mavros/state",
+          "/drone_2/mavros/state",
+
+          /// Global map (low-frequency; safe to route)
+          "/global_map_2d",
+          "/global_map_3d",
+
+          /// Latency metrics echoes
+          "/edge/latency",
+        ],
+
+        /// Commands from cloud → fleet (cloud publishes, fleet subscribes)
+        publishers: [
+          "/tb3_1/cmd_vel",
+          "/tb3_2/cmd_vel",
+          "/drone_1/mavros/setpoint_position/local",
+          "/drone_2/mavros/setpoint_position/local",
+          "/drone_1/mavros/cmd/arming",
+          "/drone_2/mavros/cmd/arming",
+        ],
+      },
+
+    },
+  },
+}

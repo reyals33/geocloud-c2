@@ -1,0 +1,16 @@
+# Python dependencies for the WebRTC signaling server.
+# GStreamer Python bindings (python3-gi, gir1.2-gst-plugins-bad-1.0)
+# are installed via apt — they are not pip packages.
+#
+# Install:
+#   pip3 install -r requirements.txt
+#
+# Also install via apt (Ubuntu 24.04):
+#   sudo apt-get install -y \
+#       gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+#       gstreamer1.0-plugins-bad  gstreamer1.0-plugins-ugly \
+#       gstreamer1.0-tools        python3-gi \
+#       gir1.2-gstreamer-1.0      gir1.2-gst-plugins-bad-1.0
+
+websockets>=12.0
+numpy>=1.24.0

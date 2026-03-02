@@ -1,0 +1,82 @@
+# ros_gz_bridge parameter_bridge config — GeoCloud C2 Arena
+# Used by: ros2 run ros_gz_bridge parameter_bridge --ros-args -p config_file:=/opt/gazebo/bridge.yaml
+#
+# Directions:
+#   ROS_TO_GZ  — browser/ROS sends cmd_vel → Gazebo physics
+#   GZ_TO_ROS  — Gazebo publishes odom/image → rosbridge → browser
+
+# ── robot1 ────────────────────────────────────────────────────────────────────
+- gz_topic_name: "/robot1/cmd_vel"
+  ros_topic_name: "/robot1/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  direction: ROS_TO_GZ
+
+- gz_topic_name: "/robot1/odom"
+  ros_topic_name: "/robot1/odom"
+  gz_type_name: "gz.msgs.Odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/robot1/camera/image_raw"
+  ros_topic_name: "/robot1/camera/image_raw"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS
+
+# ── robot2 ────────────────────────────────────────────────────────────────────
+- gz_topic_name: "/robot2/cmd_vel"
+  ros_topic_name: "/robot2/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  direction: ROS_TO_GZ
+
+- gz_topic_name: "/robot2/odom"
+  ros_topic_name: "/robot2/odom"
+  gz_type_name: "gz.msgs.Odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/robot2/camera/image_raw"
+  ros_topic_name: "/robot2/camera/image_raw"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS
+
+# ── drone1 ────────────────────────────────────────────────────────────────────
+- gz_topic_name: "/drone1/cmd_vel"
+  ros_topic_name: "/drone1/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  direction: ROS_TO_GZ
+
+- gz_topic_name: "/drone1/odom"
+  ros_topic_name: "/drone1/odom"
+  gz_type_name: "gz.msgs.Odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/drone1/camera/image_raw"
+  ros_topic_name: "/drone1/camera/image_raw"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS
+
+# ── drone2 ────────────────────────────────────────────────────────────────────
+- gz_topic_name: "/drone2/cmd_vel"
+  ros_topic_name: "/drone2/cmd_vel"
+  gz_type_name: "gz.msgs.Twist"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  direction: ROS_TO_GZ
+
+- gz_topic_name: "/drone2/odom"
+  ros_topic_name: "/drone2/odom"
+  gz_type_name: "gz.msgs.Odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  direction: GZ_TO_ROS
+
+- gz_topic_name: "/drone2/camera/image_raw"
+  ros_topic_name: "/drone2/camera/image_raw"
+  gz_type_name: "gz.msgs.Image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  direction: GZ_TO_ROS

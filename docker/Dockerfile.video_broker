@@ -1,0 +1,30 @@
+# Dockerfile.video_broker
+# ─────────────────────────────────────────────────────────────────────
+# Custom image: ROS2 Jazzy + FFmpeg
+#
+# ros2_to_rtsp_node.py requires rclpy + sensor_msgs — both need ROS2.
+# This image provides both ros:jazzy-ros-base AND ffmpeg.
+#
+# Build: docker compose -f docker/docker-compose.edge.yml build
+# ─────────────────────────────────────────────────────────────────────
+
+FROM ros:jazzy-ros-base
+
+# Install FFmpeg
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ffmpeg \
+        python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir prometheus-client
+
+# Copy project scripts
+COPY scripts/ /scripts/
+RUN chmod +x /scripts/*.sh /scripts/*.py 2>/dev/null || true
+
+# Default entrypoint: source ROS2 setup in bash
+SHELL ["/bin/bash", "-c"]
+ENTRYPOINT ["/bin/bash", "-c", "source /opt/ros/jazzy/setup.bash && exec \"$@\"", "--"]
+CMD ["bash"]

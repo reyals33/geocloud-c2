@@ -1,0 +1,20 @@
+[Unit]
+Description=GeoCloud C2 WebRTC Signaling Server
+Documentation=https://github.com/georg/ViDeG
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/webrtc
+ExecStart=/usr/bin/python3 /opt/webrtc/signaling.py
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+# Allow enough time to bind the port on startup
+TimeoutStartSec=10
+
+[Install]
+WantedBy=multi-user.target

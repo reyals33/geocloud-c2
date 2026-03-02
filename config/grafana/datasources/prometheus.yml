@@ -1,0 +1,18 @@
+###############################################################
+# Grafana auto-provisioned datasource — Prometheus
+# Place this file in grafana/provisioning/datasources/
+# (mapped via docker-compose volume)
+###############################################################
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "5s"          # Match Prometheus scrape_interval
+      httpMethod: POST

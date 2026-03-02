@@ -1,0 +1,66 @@
+###############################################################
+# mediamtx.yml
+# MediaMTX configuration for GeoCloud Fleet Edge Broker
+# Optimized for sub-100ms WebRTC glass-to-glass latency
+###############################################################
+
+# ── Network ──────────────────────────────────────────────────
+rtspAddress:    :8554
+rtmpAddress:    :1935
+hlsAddress:     :8888
+webrtcAddress:  :8889
+
+# ── Logging ──────────────────────────────────────────────────
+logLevel: info
+logDestinations: [stdout]
+
+# ── RTSP ─────────────────────────────────────────────────────
+rtspDisable: false
+protocols:   [tcp, udp]            # TCP fallback for firewalls
+
+# ── WebRTC (primary low-latency path) ────────────────────────
+webrtcDisable:          false
+webrtcICEServers2:
+  - url: stun:stun.l.google.com:19302
+# Add TURN server here for NAT traversal in production:
+# - url: turn:your-turn-server:3478
+#   username: user
+#   password: pass
+
+# ── HLS (fallback, higher latency) ───────────────────────────
+hlsDisable:        false
+hlsSegmentDuration: 500ms          # Short segments = lower latency
+hlsPartDuration:    100ms          # Low-latency HLS (LL-HLS)
+
+# ── Auth (add credentials in production) ─────────────────────
+# authMethod: jwt
+# authJWTJWKS: https://your-auth-server/.well-known/jwks.json
+
+# ── Paths (one per robot stream) ─────────────────────────────
+paths:
+
+  tb3_1:
+    source:             publisher    # FFmpeg pushes RTSP here
+    sourceOnDemand:     false
+    maxReaders:         10
+    record:             false
+    # Uncomment to record for post-analysis:
+    # record: true
+    # recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+
+  tb3_2:
+    source:             publisher
+    maxReaders:         10
+
+  drone_1:
+    source:             publisher
+    maxReaders:         10
+
+  drone_2:
+    source:             publisher
+    maxReaders:         10
+
+  # Global map stream (optional; feed from custom visualizer)
+  global_view:
+    source:             publisher
+    maxReaders:         20
