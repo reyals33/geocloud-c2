@@ -120,6 +120,7 @@ class GstWebRTCProducer:
                 'x264enc tune=zerolatency bitrate=1500 speed-preset=ultrafast'
             )
 
+        # clock-rate=90000 is required — webrtcbin refuses H264 caps without it
         pipe_str = (
             f'appsrc name=appsrc is-live=true format=time '
             f'  caps=video/x-raw,format=RGB,width={w},height={h},framerate={fps}/1 ! '
@@ -127,7 +128,7 @@ class GstWebRTCProducer:
             f'video/x-raw,format=I420 ! '
             f'{enc} ! '
             f'rtph264pay config-interval=1 pt=96 ! '
-            f'application/x-rtp,media=video,payload=96,encoding-name=H264 ! '
+            f'application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000 ! '
             f'webrtcbin name=webrtc bundle-policy=max-bundle '
             f'  stun-server=stun://stun.l.google.com:19302'
         )
@@ -348,16 +349,17 @@ def main():
                     help='Use software x264enc instead of nvh264enc')
     args = ap.parse_args()
 
-    Gst.init(None)
-
-    # GLib main loop in a daemon thread (needed for GStreamer bus signals)
-    glib_loop   = GLib.MainLoop()
-    glib_thread = threading.Thread(target=glib_loop.run, daemon=True)
-    glib_thread.start()
-
-    # asyncio event loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    # Initialisation order matters:
+    #   rclpy.init() and Node.__init__() must both complete BEFORE the GLib
+    #   main loop thread starts.  GLib's Python signal helper (wakeup_on_signal)
+    #   calls socketpair() inside the GLib thread; if rcl is still initialising
+    #   concurrently the two runtimes race on shared OS state and segfault.
+    # Gst.init() installs GLib signal handlers that corrupt rcl's internal
+    # state if called before rclpy creates its Node.  The safe order is:
+    #   1. rclpy.init() + Node.__init__()   (rcl grabs signals first)
+    #   2. Gst.init()                        (GStreamer layered on top)
+    #   3. Start GLib + rclpy threads
+    rclpy.init()
 
     producer = GstWebRTCProducer(
         agent_id   = args.agent,
@@ -365,13 +367,24 @@ def main():
         use_hw     = not args.sw,
     )
 
-    # rclpy in a daemon thread (safe: only push_frame called from it)
-    rclpy.init()
-    ros_node   = CameraNode(args.agent, producer)
+    # rclpy node created BEFORE Gst.init() — required to avoid segfault
+    ros_node = CameraNode(args.agent, producer)
+
+    Gst.init(None)
+
+    # Now safe to start both background threads
+    glib_loop   = GLib.MainLoop()
+    glib_thread = threading.Thread(target=glib_loop.run, daemon=True)
+    glib_thread.start()
+
     ros_thread = threading.Thread(
         target=lambda: rclpy.spin(ros_node), daemon=True
     )
     ros_thread.start()
+
+    # asyncio event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     try:
         loop.run_until_complete(producer.run())

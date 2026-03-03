@@ -471,6 +471,7 @@ export default function OverviewScene() {
       camera.updateProjectionMatrix()
     }
     window.addEventListener('resize', onResize)
+    onResize()  // correct size immediately — clientHeight may be 0 at initial read
 
     // ── Animation loop ────────────────────────────────────────────────────────
     let animId

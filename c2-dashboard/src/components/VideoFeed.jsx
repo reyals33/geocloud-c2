@@ -74,9 +74,9 @@ export default function VideoFeed({ agentId }) {
       {/* Status overlay — bottom of video */}
       <div className="video-feed-label" style={{ borderColor: agent.color }}>
         <span className="vfl-dot" style={{ background: hasVideo ? '#22c55e' : '#475569' }} />
-        {hasVideo ? 'LIVE' : 'NO SIGNAL'} &nbsp;·&nbsp; {agent.label}
+        {hasVideo ? 'LIVE' : 'NO SIGNAL'} &nbsp;·&nbsp; {agent.label} &nbsp;·&nbsp; {agent.width}×{agent.height}
         {hasVideo && fps != null && (
-          <span style={{ marginLeft: 8, opacity: 0.7 }}>{fps} fps</span>
+          <span style={{ marginLeft: 8, opacity: 0.7 }}>· {fps} fps</span>
         )}
       </div>
     </div>

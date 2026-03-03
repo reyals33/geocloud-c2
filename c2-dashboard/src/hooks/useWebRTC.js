@@ -75,6 +75,7 @@ export function useWebRTC(agentId) {
             const video = videoRef.current
             if (!video || !e.streams[0]) return
             video.srcObject = e.streams[0]
+            video.play().catch(() => {})
             setConnected(true)
 
             // FPS counter using requestVideoFrameCallback
@@ -130,12 +131,16 @@ export function useWebRTC(agentId) {
         }
       }
 
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
+        console.warn('[useWebRTC] WS closed', ev.code, ev.reason || '(no reason)')
         setConnected(false)
         if (!closed) setTimeout(connect, 3000)
       }
 
-      ws.onerror = () => ws.close()
+      ws.onerror = (ev) => {
+        console.error('[useWebRTC] WS error', ev)
+        ws.close()
+      }
     }
 
     connect()

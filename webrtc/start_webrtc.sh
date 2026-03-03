@@ -60,7 +60,7 @@ start_agent() {
     local SESSION="webrtc_${AGENT}"
     screen -dmS "$SESSION" bash -c "
         source ${ROS_SETUP}
-        python3 ${WEBRTC_DIR}/gst_webrtc_agent.py ${AGENT} ${SIGNAL_URL} ${SW_FLAG}
+        python3 ${WEBRTC_DIR}/aiortc_agent.py ${AGENT} ${SIGNAL_URL}
         echo '[${SESSION}] exited'
         exec bash
     "

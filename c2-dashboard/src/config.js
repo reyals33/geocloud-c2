@@ -2,10 +2,10 @@
 // spawn: ROS-frame world origin for each agent (matches c2_arena.sdf spawn poses)
 // Odom is relative to this frame, so overview scenes add it back to show world position.
 export const AGENTS = [
-  { id: 'robot1', label: 'Robot 1', color: '#0066ff', colorHex: 0x0066ff, type: 'ground', spawn: { x: -6, y: -6, z: 0   } },
-  { id: 'robot2', label: 'Robot 2', color: '#00ff88', colorHex: 0x00ff88, type: 'ground', spawn: { x:  6, y:  6, z: 0   } },
-  { id: 'drone1', label: 'Drone 1', color: '#ff3300', colorHex: 0xff3300, type: 'drone',  spawn: { x: -6, y:  6, z: 3.0 } },
-  { id: 'drone2', label: 'Drone 2', color: '#ff8800', colorHex: 0xff8800, type: 'drone',  spawn: { x:  6, y: -6, z: 4.5 }, enhancedVision: true },
+  { id: 'robot1', label: 'Robot 1', color: '#0066ff', colorHex: 0x0066ff, type: 'ground', spawn: { x: -6, y: -6, z: 0   }, width: 480, height: 360 },
+  { id: 'robot2', label: 'Robot 2', color: '#00ff88', colorHex: 0x00ff88, type: 'ground', spawn: { x:  6, y:  6, z: 0   }, width: 480, height: 360 },
+  { id: 'drone1', label: 'Drone 1', color: '#ff3300', colorHex: 0xff3300, type: 'drone',  spawn: { x: -6, y:  6, z: 3.0 }, width: 480, height: 360 },
+  { id: 'drone2', label: 'Drone 2', color: '#ff8800', colorHex: 0xff8800, type: 'drone',  spawn: { x:  6, y: -6, z: 4.5 }, enhancedVision: true, width: 480, height: 360 },
 ]
 
 export const AGENT_MAP = Object.fromEntries(AGENTS.map(a => [a.id, a]))
