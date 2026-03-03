@@ -365,7 +365,9 @@ export default function OverviewScene() {
       meshes[agent.id] = mesh
 
       // Point light
-      mesh.add(Object.assign(new THREE.PointLight(agent.colorHex, 6, 14), { position: { y: 0 } }))
+      const light = new THREE.PointLight(agent.colorHex, 6, 14)
+      light.position.y = 0
+      mesh.add(light)
 
       // Altitude leader line (drones — shows height above ground)
       if (isDrone) {
