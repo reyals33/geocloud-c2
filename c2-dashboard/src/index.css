@@ -492,8 +492,8 @@ html, body, #root {
   height: 100%;
   object-fit: contain;
   display: block;
-  image-rendering: auto;
-  filter: contrast(1.08) saturate(1.1);
+  image-rendering: crisp-edges;
+
 }
 
 /* Placeholder shown until Gazebo starts publishing */
