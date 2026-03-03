@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoCloud C2 Demo — Launch</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0f1e;
+      --panel:   #0f172a;
+      --card:    #1e293b;
+      --border:  #334155;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --dim:     #94a3b8;
+      --blue:    #3b82f6;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --orange:  #f97316;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      gap: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .logo {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .title {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: var(--dim);
+    }
+
+    /* ── Main card ── */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 36px;
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── Agent pills ── */
+    .agents {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .agent-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dim);
+    }
+    .agent-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Status area ── */
+    .status-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--dim);
+    }
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--muted);
+    }
+    .status-dot.green  { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .status-dot.blue   { background: var(--blue);  box-shadow: 0 0 8px var(--blue);  animation: pulse 1.4s ease-in-out infinite; }
+    .status-dot.orange { background: var(--orange);box-shadow: 0 0 8px var(--orange); animation: pulse 1.4s ease-in-out infinite; }
+    .status-dot.red    { background: var(--red);   box-shadow: 0 0 8px var(--red);   }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+
+    .status-label { font-weight: 600; }
+    .status-sub   { font-size: 12px; color: var(--muted); }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      height: 3px;
+      background: var(--card);
+      border-radius: 2px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.8s ease;
+    }
+    .progress-wrap.active { display: block; }
+
+    /* ── Buttons ── */
+    .btn-launch {
+      width: 100%;
+      height: 52px;
+      border-radius: 8px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      background: var(--blue);
+      color: #fff;
+    }
+    .btn-launch:hover:not(:disabled)  { background: #2563eb; }
+    .btn-launch:active:not(:disabled) { transform: scale(0.98); }
+    .btn-launch:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-launch.ready {
+      background: var(--green);
+    }
+    .btn-launch.ready:hover { background: #16a34a; }
+
+    .btn-links {
+      display: flex;
+      gap: 8px;
+      display: none;
+    }
+    .btn-links.visible { display: flex; }
+    .btn-link {
+      flex: 1;
+      padding: 10px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      text-align: center;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .btn-link:hover { background: #273549; color: var(--text); border-color: #475569; }
+
+    /* ── Footer note ── */
+    .note {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+    .note a { color: var(--dim); }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); }
+
+    /* ── Tech stack chips ── */
+    .stack {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .chip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo">GeoCloud Fleet Systems</div>
+    <div class="title">C2 Command &amp; Control Demo</div>
+    <div class="subtitle">Real-time ROS2 robotics dashboard — React · Three.js · Gazebo</div>
+  </div>
+
+  <div class="card">
+
+    <!-- Agent summary -->
+    <div class="agents">
+      <div class="agent-pill">
+        <div class="agent-dot" style="background:#3b82f6"></div>Robot 1
+      </div>
+      <div class="agent-pill">
+        <div class="agent-dot" style="background:#22c55e"></div>Robot 2
+      </div>
+      <div class="agent-pill">
+        <div class="agent-dot" style="background:#f97316"></div>Drone 1
+      </div>
+      <div class="agent-pill">
+        <div class="agent-dot" style="background:#ff8800"></div>Drone 2
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- Status -->
+    <div class="status-area">
+      <div class="status-row">
+        <div class="status-dot" id="dot"></div>
+        <div>
+          <div class="status-label" id="status-label">Checking instance...</div>
+          <div class="status-sub"  id="status-sub"></div>
+        </div>
+      </div>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Launch button -->
+    <button class="btn-launch" id="btn-launch" disabled onclick="handleLaunch()">
+      Checking...
+    </button>
+
+    <!-- Per-agent quick links (shown once ready) -->
+    <div class="btn-links" id="btn-links">
+      <a class="btn-link" id="link-robot1" href="#" target="_blank">Robot 1</a>
+      <a class="btn-link" id="link-robot2" href="#" target="_blank">Robot 2</a>
+      <a class="btn-link" id="link-drone1" href="#" target="_blank">Drone 1</a>
+      <a class="btn-link" id="link-drone2" href="#" target="_blank">Drone 2</a>
+    </div>
+
+    <hr />
+
+    <div class="stack">
+      <span class="chip">ROS2 Jazzy</span>
+      <span class="chip">Gazebo Harmonic</span>
+      <span class="chip">React 18</span>
+      <span class="chip">Three.js</span>
+      <span class="chip">rosbridge WS</span>
+      <span class="chip">AWS EC2</span>
+      <span class="chip">WebRTC</span>
+      <span class="chip">GStreamer</span>
+      <span class="chip">NVENC</span>
+    </div>
+
+    <div class="note">
+      The demo server auto-stops after <strong>2 hours</strong> of uptime.<br />
+      Boot takes ~3 min · Gazebo sim starts automatically.
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // ── CONFIG ────────────────────────────────────────────────────────────
+  const API = 'https://k9mk0r8nfj.execute-api.us-west-2.amazonaws.com'
+  // ─────────────────────────────────────────────────────────────────────
+
+  const dot          = document.getElementById('dot')
+  const label        = document.getElementById('status-label')
+  const sub          = document.getElementById('status-sub')
+  const btn          = document.getElementById('btn-launch')
+  const links        = document.getElementById('btn-links')
+  const progressWrap = document.getElementById('progress-wrap')
+  const progressBar  = document.getElementById('progress-bar')
+
+  let demoIp     = null
+  let pollTimer  = null
+  let bootTimer  = null
+  let bootStart  = null
+  const BOOT_MS  = 180000  // ~3 min for EC2 + Gazebo
+
+  function setStatus(dotClass, labelText, subText = '') {
+    dot.className   = 'status-dot ' + dotClass
+    label.textContent = labelText
+    sub.textContent   = subText
+  }
+
+  function setLinks(ip) {
+    const base = `http://${ip}`
+    document.getElementById('link-robot1').href = `${base}/robot1`
+    document.getElementById('link-robot2').href = `${base}/robot2`
+    document.getElementById('link-drone1').href = `${base}/drone1`
+    document.getElementById('link-drone2').href = `${base}/drone2`
+    links.classList.add('visible')
+  }
+
+  function startBootProgress() {
+    bootStart = Date.now()
+    progressWrap.classList.add('active')
+    function tick() {
+      const pct = Math.min(95, ((Date.now() - bootStart) / BOOT_MS) * 100)
+      progressBar.style.width = pct + '%'
+      if (pct < 95) bootTimer = setTimeout(tick, 500)
+    }
+    tick()
+  }
+
+  function finishProgress() {
+    clearTimeout(bootTimer)
+    progressBar.style.width = '100%'
+    setTimeout(() => progressWrap.classList.remove('active'), 800)
+  }
+
+  function onReady(ip) {
+    demoIp = ip
+    clearTimeout(pollTimer)
+    finishProgress()
+    setStatus('green', 'Demo is live', `${ip} — Gazebo running`)
+    btn.textContent = '⬛ Open Overview →'
+    btn.className = 'btn-launch ready'
+    btn.disabled = false
+    btn.onclick = () => window.open(`http://${ip}/overview`, '_blank')
+    setLinks(ip)
+  }
+
+  async function poll() {
+    try {
+      const r    = await fetch(`${API}/status`)
+      const data = await r.json()
+      const { state, ip } = data
+
+      if (state === 'running' && ip) {
+        // EC2 is up — wait for Gazebo (if boot just started, keep countdown)
+        if (!bootStart) {
+          onReady(ip)
+        } else {
+          const elapsed = Date.now() - bootStart
+          if (elapsed >= BOOT_MS) {
+            onReady(ip)
+          } else {
+            const remain = Math.ceil((BOOT_MS - elapsed) / 1000)
+            setStatus('blue', 'Instance running — starting Gazebo…', `~${remain}s remaining`)
+            pollTimer = setTimeout(poll, 5000)
+          }
+        }
+      } else if (state === 'pending' || state === 'starting') {
+        setStatus('orange', 'EC2 instance booting…', 'Usually takes 60–90 seconds')
+        pollTimer = setTimeout(poll, 5000)
+      } else if (state === 'stopped') {
+        setStatus('', 'Instance is off', 'Click Launch to start the demo')
+        btn.textContent = '▶ Launch Demo'
+        btn.disabled = false
+        btn.onclick = handleLaunch
+      } else if (state === 'stopping') {
+        setStatus('orange', 'Instance is shutting down…', '')
+        btn.disabled = true
+        pollTimer = setTimeout(poll, 6000)
+      } else {
+        setStatus('', `State: ${state}`, '')
+        btn.disabled = true
+        pollTimer = setTimeout(poll, 8000)
+      }
+    } catch (e) {
+      setStatus('red', 'Could not reach wake-up service', e.message)
+      pollTimer = setTimeout(poll, 10000)
+    }
+  }
+
+  async function handleLaunch() {
+    btn.disabled = true
+    btn.textContent = 'Sending start command…'
+    setStatus('blue', 'Requesting EC2 start…', '')
+    startBootProgress()
+
+    try {
+      const r    = await fetch(`${API}/start`, { method: 'POST' })
+      const data = await r.json()
+
+      if (data.state === 'running' && data.ip) {
+        onReady(data.ip)
+      } else {
+        setStatus('orange', 'EC2 starting…', 'Boot takes ~60–90s, then Gazebo ~2 min')
+        btn.textContent = 'Starting…'
+        pollTimer = setTimeout(poll, 6000)
+      }
+    } catch (e) {
+      setStatus('red', 'Failed to start instance', e.message)
+      btn.textContent = '▶ Retry Launch'
+      btn.disabled = false
+    }
+  }
+
+  // ── Boot: check initial state ─────────────────────────────────────────
+  poll()
+</script>
+</body>
+</html>

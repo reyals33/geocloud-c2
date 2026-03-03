@@ -340,15 +340,15 @@ html, body, #root {
 /* ── Tactical corner brackets ─────────────────────────────────── */
 .c2-corner {
   position: absolute;
-  width: 36px;
-  height: 36px;
+  width: 12px;
+  height: 12px;
   pointer-events: none;
   z-index: 10;
 }
-.c2-corner-tl { top: 14px;    left: 14px;  border-top:    1.5px solid rgba(0,140,200,0.30); border-left:   1.5px solid rgba(0,140,200,0.30); }
-.c2-corner-tr { top: 14px;    right: 14px; border-top:    1.5px solid rgba(0,140,200,0.30); border-right:  1.5px solid rgba(0,140,200,0.30); }
-.c2-corner-bl { bottom: 14px; left: 14px;  border-bottom: 1.5px solid rgba(0,140,200,0.30); border-left:   1.5px solid rgba(0,140,200,0.30); }
-.c2-corner-br { bottom: 14px; right: 14px; border-bottom: 1.5px solid rgba(0,140,200,0.30); border-right:  1.5px solid rgba(0,140,200,0.30); }
+.c2-corner-tl { top: 14px;    left: 14px;  border-top:    1px solid rgba(0,140,200,0.28); border-left:   1px solid rgba(0,140,200,0.28); }
+.c2-corner-tr { top: 14px;    right: 14px; border-top:    1px solid rgba(0,140,200,0.28); border-right:  1px solid rgba(0,140,200,0.28); }
+.c2-corner-bl { bottom: 14px; left: 14px;  border-bottom: 1px solid rgba(0,140,200,0.28); border-left:   1px solid rgba(0,140,200,0.28); }
+.c2-corner-br { bottom: 14px; right: 14px; border-bottom: 1px solid rgba(0,140,200,0.28); border-right:  1px solid rgba(0,140,200,0.28); }
 
 /* ── C2 HUD overlay ───────────────────────────────────────────── */
 .c2-hud {

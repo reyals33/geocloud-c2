@@ -57,7 +57,7 @@ export default function Joystick({ onChange, axisX = true, axisY = true, label }
       <div
         ref={outerRef}
         className="joystick-outer"
-        onPointerDown={onDown}
+        style={{ touchAction: "none" }} onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}

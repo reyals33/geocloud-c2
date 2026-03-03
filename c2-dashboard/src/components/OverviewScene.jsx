@@ -665,55 +665,42 @@ export default function OverviewScene() {
       <div className="c2-corner c2-corner-bl" />
       <div className="c2-corner c2-corner-br" />
 
-      <div className="c2-hud">
-        <div className="c2-hud-top">
-          <div className="c2-hud-header">
-            <span className="c2-hud-dot" />
-            <span className="c2-hud-title">GEOCLOUD TACTICAL COMMAND</span>
-            <span className="c2-hud-badge">FLEET-07 ORBITAL</span>
-          </div>
+      {/* MET — top-left */}
+      <div className="c2-met">MET {fmtTime(missionSec)}</div>
 
-          <div style={{
-            fontFamily: "'JetBrains Mono','Fira Code',monospace",
-            fontSize: 11, letterSpacing: '0.14em',
-            color: 'rgba(0,160,220,0.55)',
-          }}>
-            MET {fmtTime(missionSec)}
-          </div>
-
-          <div className="c2-agent-roster">
-            {AGENTS.map(a => {
-              const live   = hudData[a.id]?.connected
-              const coords = agentCoords[a.id]
-              return (
-                <div key={a.id} className={`c2-roster-card ${live ? 'live' : ''}`}
-                  style={{ '--agent-color': a.color }}>
-                  <div className="c2-roster-id" style={{ color: a.color }}>
-                    {a.id.replace(/([a-z])(\d)/, '$1-$2').toUpperCase()}
-                  </div>
-                  <div className={`c2-roster-status ${live ? 'live' : ''}`}>
-                    {live ? '● ACTIVE' : '○ OFFLINE'}
-                  </div>
-                  <div className="c2-roster-coords">
-                    {coords ? `X ${coords.x.toFixed(1)}  Y ${coords.y.toFixed(1)}` : '-- · --'}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="c2-hud-footer">
-          <span className="c2-footer-stat">ONLINE {onlineCount} / {AGENTS.length}</span>
-          <span className="c2-footer-stat" style={{ marginLeft: 16 }}>
-            ROS {status === 'connected' ? 'LIVE' : status.toUpperCase()}
-          </span>
-          <span className="c2-footer-stat" style={{ marginLeft: 16 }}>C2-OMEGA</span>
-          <button className="c2-orbit-btn" onClick={toggleOrbit}>
-            {orbitMode ? '⟳ ORBIT ON' : '⟳ ORBIT OFF'}
-          </button>
-        </div>
+      {/* Agent roster — top-right */}
+      <div className="c2-roster-panel">
+        {AGENTS.map(a => {
+          const live   = hudData[a.id]?.connected
+          const coords = agentCoords[a.id]
+          return (
+            <div key={a.id} className={`c2-roster-card ${live ? 'live' : ''}`}
+              style={{ '--agent-color': a.color }}>
+              <div className="c2-roster-id" style={{ color: a.color }}>
+                {a.id.replace(/([a-z])(\d)/, '$1-$2').toUpperCase()}
+              </div>
+              <div className={`c2-roster-status ${live ? 'live' : ''}`}>
+                {live ? '● ACTIVE' : '○ OFFLINE'}
+              </div>
+              <div className="c2-roster-coords">
+                {coords ? `X ${coords.x.toFixed(1)}  Y ${coords.y.toFixed(1)}` : '-- · --'}
+              </div>
+            </div>
+          )
+        })}
       </div>
+
+      {/* Footer stats — bottom-left */}
+      <div className="c2-footer-bar">
+        <span className="c2-footer-stat">ONLINE {onlineCount} / {AGENTS.length}</span>
+        <span className="c2-footer-stat">ROS {status === 'connected' ? 'LIVE' : status.toUpperCase()}</span>
+        <span className="c2-footer-stat">C2-OMEGA</span>
+      </div>
+
+      {/* Orbit button — bottom-right */}
+      <button className="c2-orbit-btn" onClick={toggleOrbit}>
+        {orbitMode ? '⟳ ORBIT ON' : '⟳ ORBIT OFF'}
+      </button>
     </div>
   )
 }
